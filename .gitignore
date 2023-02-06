@@ -3,3 +3,7 @@ __pycache__/
 *.swp
 .env
 .pylintrc
+.idea
+projects/chargpt/.ipynb_checkpoints/
+projects/chargpt/out/
+projects/adder/out/

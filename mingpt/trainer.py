@@ -20,8 +20,8 @@ class Trainer:
         # dataloder parameters
         C.num_workers = 4
         # optimizer parameters
-        C.max_iters = None
-        C.batch_size = 64
+        C.max_iters = 3000
+        C.batch_size = 256
         C.learning_rate = 3e-4
         C.betas = (0.9, 0.95)
         C.weight_decay = 0.1 # only applied on matmul weights
@@ -78,7 +78,7 @@ class Trainer:
         self.iter_num = 0
         self.iter_time = time.time()
         data_iter = iter(train_loader)
-        while True:
+        while self.iter_num < config.max_iters:
 
             # fetch the next batch (x, y) and re-init iterator if needed
             try:
@@ -103,7 +103,3 @@ class Trainer:
             tnow = time.time()
             self.iter_dt = tnow - self.iter_time
             self.iter_time = tnow
-
-            # termination conditions
-            if config.max_iters is not None and self.iter_num >= config.max_iters:
-                break

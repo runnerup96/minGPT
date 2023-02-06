@@ -1,5 +1,6 @@
 """
 Trains a character-level language model.
+https://huggingface.co/datasets/huggingartists/eminem
 """
 
 import os
@@ -8,6 +9,7 @@ import sys
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import DataLoader
+import wandb
 
 from mingpt.model import GPT
 from mingpt.trainer import Trainer
@@ -22,7 +24,7 @@ def get_config():
     # system
     C.system = CN()
     C.system.seed = 3407
-    C.system.work_dir = './out/chargpt'
+    C.system.work_dir = './out/chargpt_eminem'
 
     # data
     C.data = CharDataset.get_default_config()
@@ -35,6 +37,7 @@ def get_config():
     C.trainer = Trainer.get_default_config()
     C.trainer.learning_rate = 5e-4 # the model we're using is so small that we can go a bit faster
 
+    C.max_iters = 3000
     return C
 
 # -----------------------------------------------------------------------------
@@ -76,6 +79,7 @@ class CharDataset(Dataset):
         chunk = self.data[idx:idx + self.config.block_size + 1]
         # encode every character to an integer
         dix = [self.stoi[s] for s in chunk]
+        # language modeling problem - move every element in x to right and receive y. 1 -> 2, 2 -> 3, 3 -> 4
         # return as tensors
         x = torch.tensor(dix[:-1], dtype=torch.long)
         y = torch.tensor(dix[1:], dtype=torch.long)
@@ -92,8 +96,17 @@ if __name__ == '__main__':
     setup_logging(config)
     set_seed(config.system.seed)
 
+    config_dict = config.to_dict()
+    wandb_config = {key: config_dict[key] for key in config_dict}
+
+    wandb_run = wandb.init(project="mini_gpt_teaching",
+                        entity=os.environ['WANDB_LOGIN'],
+                        config=wandb_config)
+
+    wandb_run.name = "eminem_gpt_example"
+
     # construct the training dataset
-    text = open('input.txt', 'r').read() # don't worry we won't run out of file handles
+    text = open('eminem_lyrics.txt', 'r').read() # don't worry we won't run out of file handles
     train_dataset = CharDataset(config.data, text)
 
     # construct the model
@@ -108,6 +121,9 @@ if __name__ == '__main__':
     def batch_end_callback(trainer):
 
         if trainer.iter_num % 10 == 0:
+            wandb_run.log({"loss": trainer.loss.item()})
+
+        if trainer.iter_num % 100 == 0:
             print(f"iter_dt {trainer.iter_dt * 1000:.2f}ms; iter {trainer.iter_num}: train loss {trainer.loss.item():.5f}")
 
         if trainer.iter_num % 500 == 0:
@@ -115,7 +131,7 @@ if __name__ == '__main__':
             model.eval()
             with torch.no_grad():
                 # sample from the model...
-                context = "O God, O God!"
+                context = "Real world madness Lyrics"
                 x = torch.tensor([train_dataset.stoi[s] for s in context], dtype=torch.long)[None,...].to(trainer.device)
                 y = model.generate(x, 500, temperature=1.0, do_sample=True, top_k=10)[0]
                 completion = ''.join([train_dataset.itos[int(i)] for i in y])
@@ -131,3 +147,4 @@ if __name__ == '__main__':
 
     # run the optimization
     trainer.run()
+    wandb_run.finish()

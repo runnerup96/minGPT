@@ -78,14 +78,15 @@ class Block(nn.Module):
         self.ln_1 = nn.LayerNorm(config.n_embd)
         self.attn = CausalSelfAttention(config)
         self.ln_2 = nn.LayerNorm(config.n_embd)
+        # ModuleDict - ordered dict
         self.mlp = nn.ModuleDict(dict(
-            c_fc    = nn.Linear(config.n_embd, 4 * config.n_embd),
-            c_proj  = nn.Linear(4 * config.n_embd, config.n_embd),
-            act     = NewGELU(),
-            dropout = nn.Dropout(config.resid_pdrop),
+            fully_connected=nn.Linear(config.n_embd, 4 * config.n_embd),
+            projection=nn.Linear(4 * config.n_embd, config.n_embd),
+            activation=NewGELU(),
+            dropout=nn.Dropout(config.resid_pdrop),
         ))
         m = self.mlp
-        self.mlpf = lambda x: m.dropout(m.c_proj(m.act(m.c_fc(x)))) # MLP forward
+        self.mlpf = lambda x: m.dropout(m.projection(m.activation(m.fully_connected(x)))) # MLP forward
 
     def forward(self, x):
         x = x + self.attn(self.ln_1(x))
@@ -142,7 +143,9 @@ class GPT(nn.Module):
             }[config.model_type])
 
         self.transformer = nn.ModuleDict(dict(
+            # word token embedding
             wte = nn.Embedding(config.vocab_size, config.n_embd),
+            # word position embedding
             wpe = nn.Embedding(config.block_size, config.n_embd),
             drop = nn.Dropout(config.embd_pdrop),
             h = nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
