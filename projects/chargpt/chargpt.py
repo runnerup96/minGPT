@@ -8,8 +8,7 @@ import sys
 
 import torch
 from torch.utils.data import Dataset
-from torch.utils.data.dataloader import DataLoader
-import wandb
+from torch.utils.tensorboard import SummaryWriter
 
 from mingpt.model import GPT
 from mingpt.trainer import Trainer
@@ -97,14 +96,7 @@ if __name__ == '__main__':
     set_seed(config.system.seed)
 
     config_dict = config.to_dict()
-    wandb_config = {key: config_dict[key] for key in config_dict}
-
-    wandb_run = wandb.init(project="mini_gpt_teaching",
-                        entity=os.environ['WANDB_LOGIN'],
-                        config=wandb_config)
-
-    wandb_run.name = "eminem_gpt_example"
-
+    writer = SummaryWriter(log_dir="./out/chargpt_eminem/logs")
     # construct the training dataset
     text = open('eminem_lyrics.txt', 'r').read() # don't worry we won't run out of file handles
     train_dataset = CharDataset(config.data, text)
@@ -121,7 +113,7 @@ if __name__ == '__main__':
     def batch_end_callback(trainer):
 
         if trainer.iter_num % 10 == 0:
-            wandb_run.log({"loss": trainer.loss.item()})
+            writer.add_scalar('Loss/train', trainer.loss.item(), trainer.iter_num)
 
         if trainer.iter_num % 100 == 0:
             print(f"iter_dt {trainer.iter_dt * 1000:.2f}ms; iter {trainer.iter_num}: train loss {trainer.loss.item():.5f}")
@@ -131,7 +123,7 @@ if __name__ == '__main__':
             model.eval()
             with torch.no_grad():
                 # sample from the model...
-                context = "Real world madness Lyrics"
+                context = "Slim Shady Anthem Lyrics"
                 x = torch.tensor([train_dataset.stoi[s] for s in context], dtype=torch.long)[None,...].to(trainer.device)
                 y = model.generate(x, 500, temperature=1.0, do_sample=True, top_k=10)[0]
                 completion = ''.join([train_dataset.itos[int(i)] for i in y])
@@ -147,4 +139,3 @@ if __name__ == '__main__':
 
     # run the optimization
     trainer.run()
-    wandb_run.finish()
