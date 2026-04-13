@@ -167,21 +167,9 @@ class EncoderDecoderGPT(nn.Module):
         dec_cfg.resid_pdrop = config.resid_pdrop
         dec_cfg.block_size  = config.decoder_block_size
 
-        self.encoder = nn.ModuleDict(dict(
-            wte  = nn.Embedding(config.vocab_size, config.n_embd),
-            wpe  = nn.Embedding(config.encoder_block_size, config.n_embd),
-            drop = nn.Dropout(config.embd_pdrop),
-            h    = nn.ModuleList([EncoderBlock(enc_cfg) for _ in range(config.n_layer)]),
-            ln_f = nn.LayerNorm(config.n_embd),
-        ))
-        self.decoder = nn.ModuleDict(dict(
-            wte  = nn.Embedding(config.vocab_size, config.n_embd),
-            wpe  = nn.Embedding(config.decoder_block_size, config.n_embd),
-            drop = nn.Dropout(config.embd_pdrop),
-            h    = nn.ModuleList([DecoderBlock(dec_cfg) for _ in range(config.n_layer)]),
-            ln_f = nn.LayerNorm(config.n_embd),
-        ))
-        self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+        self.encoder = None # CODE HERE
+        self.decoder = None # CODE HERE
+        self.lm_head = None # CODE HERE
 
         self.apply(self._init_weights)
         for pn, p in self.named_parameters():
