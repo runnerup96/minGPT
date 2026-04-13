@@ -28,7 +28,7 @@ python projects/overfit_test/test_environment.py
 #### Практика
 
 ```bash
-# Реализуйте все Code Here строки кода
+# Реализуйте все Code Here строки кода в файле mingpt/enc_dec_model.py
 
 # Запустите 
 python projects/overfit_test/run_overfit.py
@@ -36,7 +36,7 @@ python projects/overfit_test/run_overfit.py
 # Ошибка должна упасть до 10^-5, а модель должна корректно воспроизвести обучающую выборку в таком формате.
 ```
 
-Такой результат:
+
 
 
 | Source          | Expected        | Predicted       | OK?  |
