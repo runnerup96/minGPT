@@ -6,4 +6,9 @@ __pycache__/
 .idea
 projects/chargpt/.ipynb_checkpoints/
 projects/chargpt/out/
+projects/chargpt/wandb/
 projects/adder/out/
+.venv
+.DS_Store
+minGPT.egg-info/
+.pytest_cache
