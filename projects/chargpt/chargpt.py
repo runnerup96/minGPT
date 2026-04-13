@@ -1,6 +1,5 @@
 """
 Trains a character-level language model.
-https://huggingface.co/datasets/huggingartists/eminem
 """
 
 import os
@@ -23,7 +22,7 @@ def get_config():
     # system
     C.system = CN()
     C.system.seed = 3407
-    C.system.work_dir = './out/chargpt_eminem'
+    C.system.work_dir = './out/chargpt_russia'
 
     # data
     C.data = CharDataset.get_default_config()
@@ -35,8 +34,8 @@ def get_config():
     # trainer
     C.trainer = Trainer.get_default_config()
     C.trainer.learning_rate = 5e-4 # the model we're using is so small that we can go a bit faster
-
-    C.max_iters = 3000
+    C.trainer.device = "cuda:0"
+    C.max_iters = 5000
     return C
 
 # -----------------------------------------------------------------------------
@@ -80,9 +79,12 @@ class CharDataset(Dataset):
         dix = [self.stoi[s] for s in chunk]
         # language modeling problem - move every element in x to right and receive y. 1 -> 2, 2 -> 3, 3 -> 4
         # return as tensors
-        x = torch.tensor(dix[:-1], dtype=torch.long)
-        y = torch.tensor(dix[1:], dtype=torch.long)
+        x = torch.tensor(dix[:-1], dtype=torch.long)#1234
+        y = torch.tensor(dix[1:], dtype=torch.long)#2345
         return x, y
+
+    # 123 -> 456
+
 
 # -----------------------------------------------------------------------------
 
@@ -96,9 +98,9 @@ if __name__ == '__main__':
     set_seed(config.system.seed)
 
     config_dict = config.to_dict()
-    writer = SummaryWriter(log_dir="./out/chargpt_eminem/logs")
+    writer = SummaryWriter(log_dir="./out/chargpt_russia/logs")
     # construct the training dataset
-    text = open('eminem_lyrics.txt', 'r').read() # don't worry we won't run out of file handles
+    text = open('cleaned_wikipedia_text.txt', 'r').read() # don't worry we won't run out of file handles
     train_dataset = CharDataset(config.data, text)
 
     # construct the model
@@ -123,7 +125,7 @@ if __name__ == '__main__':
             model.eval()
             with torch.no_grad():
                 # sample from the model...
-                context = "Slim Shady Anthem Lyrics"
+                context = "Russia is "
                 x = torch.tensor([train_dataset.stoi[s] for s in context], dtype=torch.long)[None,...].to(trainer.device)
                 y = model.generate(x, 500, temperature=1.0, do_sample=True, top_k=10)[0]
                 completion = ''.join([train_dataset.itos[int(i)] for i in y])
